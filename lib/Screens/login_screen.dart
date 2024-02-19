@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 import 'package:progress_state_button/iconed_button.dart';
 import 'package:progress_state_button/progress_button.dart';
 import 'package:email_validator/email_validator.dart';
@@ -53,6 +56,45 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
 
+  // ログイン処理
+  Future<bool> login(BuildContext context, LoginData ld) async {
+    final uri = Uri.https(dotenv.get("URL"), "/api/auth");
+    dynamic resJson;
+
+    try{
+      // /api/authへpost
+      await http.post(
+        uri,
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'email': ld.email,
+          "password": ld.password,
+        }),
+      ).then((value) { // responseが帰ってきたら
+        resJson = jsonDecode(value.body);
+        if (resJson["is_success"] == "true"){
+          // ストレージに書き込み TODO: 書き込みするかを選択できるようにする
+          LoginData data = ld;
+          data.token = resJson["token"];
+          writeStorage(data);
+          // HomeScreenへ移動
+          navigateToHome(context, resJson["token"]);
+          dialog(context, "ログインしました");
+          return true;
+        } else {
+          dialog(context, resJson["message"]);
+        }
+      });
+
+    } catch (e) { // ログインが失敗した時の処理
+      dialog(context, "エラーが発生しました :\n$e");
+    }
+    return false;
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return FormScreen(
@@ -61,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: StylishButton(
           onTap: _isDisabled ? () => () : () => navigateToRegister(context),
           child: Text(
-            "Register",
+            "アカウント登録",
             style: TextStyle(
               color: Colors.purpleAccent.withOpacity(0.8),
             ),
@@ -110,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: const InputDecoration(
                   icon: Icon(Icons.mail),
                   hintText: "hogehoge@mail.com",
-                  labelText: "Email Address"
+                  labelText: "メールアドレス"
                 ),
                 onChanged: (String value){
                   setState(() {
@@ -132,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 },
                 decoration: InputDecoration(
                   icon: const Icon(Icons.lock),
-                  labelText: 'Password',
+                  labelText: 'パスワード',
                   suffixIcon: IconButton(
                     icon: Icon(_hidePassword ? Icons.visibility_off : Icons.visibility),
                     onPressed: () {
@@ -155,7 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ProgressButton.icon(
               iconedButtons: const {
                 ButtonState.idle: IconedButton(
-                  text: "login",
+                  text: "ログイン",
                   icon: Icon(Icons.login,color: Colors.white),
                   color: Colors.white54
                 ),

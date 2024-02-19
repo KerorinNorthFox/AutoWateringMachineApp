@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 import 'package:progress_state_button/progress_button.dart';
 import 'package:progress_state_button/iconed_button.dart';
 import 'package:email_validator/email_validator.dart';
@@ -39,6 +42,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
 
+  // アカウント登録処理
+  Future<bool> register(BuildContext context, RegisterData data) async {
+    final uri = Uri.https(dotenv.get("URL"), "/api/register");
+    dynamic resJson;
+
+    try{
+      await http.post(
+        uri,
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          "username": data.username,
+          'email': data.email,
+          "password": data.password,
+        }),
+      ).then((res) {
+        resJson = jsonDecode(res.body);
+        if (resJson["is_success"] == "true"){
+          Navigator.of(context).pop();
+          dialog(context, "アカウントを作成しました");
+          return true;
+        } else {
+          dialog(context, resJson["message"]);
+        }
+      });
+
+    } catch (e) {
+      dialog(context, "エラーが発生しました :\n$e");
+
+    }
+
+    return false;
+  }
+
+
   @override
   Widget build(BuildContext context){
     return FormScreen(
@@ -47,7 +86,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: StylishButton(
           onTap: _isDisabled ? () => () : () => Navigator.of(context).pop(),
           child: Text(
-            "Back",
+            "戻る",
             style: TextStyle(
               color: Colors.purpleAccent.withOpacity(0.8),
             ),
@@ -92,7 +131,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 },
                 decoration: const InputDecoration(
                   icon: Icon(Icons.account_circle),
-                  labelText: "Username"
+                  labelText: "ユーザー名"
                 ),
                 onChanged: (String value) {
                   setState(() {
@@ -115,7 +154,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 decoration: const InputDecoration(
                   icon: Icon(Icons.mail),
                   hintText: "hogehoge@mail.com",
-                  labelText: "Email Address"
+                  labelText: "メールアドレス"
                 ),
                 onChanged: (String value) {
                   setState(() {
@@ -136,7 +175,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 },
                 decoration: InputDecoration(
                   icon: const Icon(Icons.lock),
-                  labelText: "Password",
+                  labelText: "パスワード",
                   suffixIcon: IconButton(
                     icon: Icon(hidePassword ? Icons.visibility_off : Icons.visibility),
                     onPressed: () {
@@ -159,7 +198,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ProgressButton.icon(
               iconedButtons: const {
                 ButtonState.idle: IconedButton(
-                  text: "register",
+                  text: "登録",
                   icon: Icon(Icons.login,color: Colors.white),
                   color: Colors.white54
                 ),

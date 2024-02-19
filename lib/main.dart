@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:fl_chart/fl_chart.dart';
 import 'package:souzouseisaku/Utils/utils.dart';
 import 'package:souzouseisaku/Screens/login_screen.dart';
 import 'package:souzouseisaku/Screens/home_screen.dart';
@@ -18,7 +18,7 @@ void main() async {
   await dotenv.load(fileName: '.env'); // 環境変数のファイル読み込み
 
   if (isDelete){
-    deleteStorage(isAll: false);
+    deleteStorage(isAll: true);
   } else if (isTest){
     test();
   } else {
@@ -70,22 +70,19 @@ class MyApp extends StatelessWidget {
     Widget mainWidget;
     // トークンがもうあるときそのままHomeScreenへ
     if (data.token != "") {
-      print("homescreenへ");
       mainWidget = HomeScreen(token: data.token);
       // メアドとパスワードがあるときそれを保持してLoginScreenへ
     } else if (data.email != "" || data.password != "") {
-      print("メアドとパスワード保持");
       mainWidget = LoginScreen(email: data.email, password: data.password);
       // 何もデータがないとき
     } else {
-      print("バニラ");
       mainWidget = const LoginScreen();
     }
 
     return MaterialApp(
       title: 'neko',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
       home: mainWidget
